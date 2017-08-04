@@ -2,9 +2,17 @@
 """
 Spinlab Curve Fitting Template
 
-File:          SpinlabCF_template.py
+File:          template_test.py
 Author:        Steve Fromm
 Last Modified: 2017-08-04
+
+****************************************
+This file shows a configured template to plot data taken durin the PHY 451 Lectures during Summer 2017 @ NSCL.
+This file uses the data file:
+            Current_vs_Voltage.txt
+
+The script will generate all three plots and save them to .png files
+****************************************
 
 This template demonstrates usage of the SpinlabCF curve fitting library.  This
 library makes use of the packages scipy.optimize, numpy and matplotlib.  It
