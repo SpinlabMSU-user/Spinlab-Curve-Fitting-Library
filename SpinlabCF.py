@@ -28,6 +28,7 @@ class ModelException(Exception):
 class CurveFitException(Exception):
     pass
 
+# Old 4-column data set - new DataSet with default functionality replicates this class
 #class StandardDataSet(object):
 #    """This class provides a simple container for a data set loaded from a file"""
 #    def __init__(self,fileName,delim='\t',absoluteSigma=True):
@@ -181,8 +182,8 @@ class DataSet(object):
         return self.__repr__()
     
 def LinSolve(X,Y,deg):
-    """Linearizes and solves n-degree polynomials based off of evenly spaced
-    data points in a given data set.  Used to help generate intial guesses
+    """Linearizes and solves n-degree polynomials by choosing evenly spaced
+    indices from the given data set.  Used to help generate intial guesses
     at model parameters.  Data must have deg+1 points.
     Parameters:
         X - iterable, X values
@@ -519,7 +520,7 @@ class Fit(object):
         if (method == 'trf' or method == 'dogbox') and not bounds:
             raise CurveFitException('Bounds are reuqired for trf and dogbox algorithms')
         
-        # Check if initial params are given, otherwise run without x errors
+        # Check if initial params are given, otherwise use Model.InitialGuess()
         # to obtain initial guesses
         if not initialParams:
             initialParams = model.InitialGuess(self.data)
