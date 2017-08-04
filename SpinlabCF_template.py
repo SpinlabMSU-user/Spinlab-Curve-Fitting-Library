@@ -41,6 +41,7 @@ dyDataCol = 3
 
 # Output files
 # Plots can be saved to any standard image file
+# Set to None for any plot you do not wish to save
 dataPlotFile = 'path_to_save_dataPlotFile.png'
 fitPlotFile = 'path_to_save_fitPlotFile.png'
 residualPlotFile = 'path_to_save_residualPlotFile.png'
