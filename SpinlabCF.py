@@ -148,7 +148,7 @@ class DataSet(object):
         return self.data[:,self.columns[key]]
             
     def __repr__(self):
-        """Return a readadble table of the data set"""
+        """Return a readable table of the data set"""
         line = ''
         
         if self.headers:
@@ -389,7 +389,7 @@ class CubicModel(Model):
         
     def InitialGuess(self,data):
         """Use evenly spaced points to solve linear system"""
-        return LinSolve(data.X,data.Y,2)
+        return LinSolve(data.X,data.Y,3)
         
 class GaussianModel(Model):
     """Basic Gaussian Fit Model"""
