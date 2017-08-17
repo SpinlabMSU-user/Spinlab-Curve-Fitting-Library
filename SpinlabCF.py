@@ -28,7 +28,6 @@ class ModelException(Exception):
 class CurveFitException(Exception):
     pass
 
-# Old 4-column data set - new DataSet with default functionality replicates this class
 #class StandardDataSet(object):
 #    """This class provides a simple container for a data set loaded from a file"""
 #    def __init__(self,fileName,delim='\t',absoluteSigma=True):
@@ -148,7 +147,7 @@ class DataSet(object):
         return self.data[:,self.columns[key]]
             
     def __repr__(self):
-        """Return a readable table of the data set"""
+        """Return a readadble table of the data set"""
         line = ''
         
         if self.headers:
@@ -182,8 +181,8 @@ class DataSet(object):
         return self.__repr__()
     
 def LinSolve(X,Y,deg):
-    """Linearizes and solves n-degree polynomials by choosing evenly spaced
-    indices from the given data set.  Used to help generate intial guesses
+    """Linearizes and solves n-degree polynomials based off of evenly spaced
+    data points in a given data set.  Used to help generate intial guesses
     at model parameters.  Data must have deg+1 points.
     Parameters:
         X - iterable, X values
@@ -259,6 +258,48 @@ class Model(object):
     def InitialGuess(self,data):
         """Generate an initial guess of the parameters for the model"""
         return None
+    
+class UserModel(Model):
+    """Custom model based on a user provided function"""
+    def __init__(self,name,func,params,text,initGuess=None,formatText=None):
+        """Generate a custom model based on a provided funtion
+        Parameters:
+            name - string, name of the model
+            func - function to fit to of form f(x,p0,..pn)
+            params - string list, name of the parameters in same order as the
+                     provided function, e.g. ['m','b'] for f(x,m,b)
+            text - string, text form of the equation, e.g. 'y=m*x+b'
+            initGuess - (optional) function to provide initial guess for fitting
+                        algorithm, of form guess(data) where data is a DataSet
+            formatText - (optional) string, format string with identifiers as
+                         param names, e.g. 'y={m:1.2f}x+{b:1.2f}"""
+        super().__init__()
+        self.name = name
+        self.numParams = len(params)
+        self.paramNames = params
+        self.func = func
+        self.initGuess = initGuess
+        self.text = text
+        self.formatText = formatText
+        
+    def Function(self,x,*args):
+        """Returns user provided function evaluated at a given x"""
+        return self.func(x,*args)
+    
+    def InitialGuess(self,data):
+        """Generates an initial guess to use in the fitting algorithm (if provided)"""
+        if not self.initGuess:
+            # Return 1's if not provided
+            return (1 for i in range(self.numParams))
+        
+        return self.initGuess(data)
+    
+    def Text(self,vals=None):
+        """Return text form of model"""
+        if not self.formatText or not vals:
+            return self.text
+        else:
+            return self.formatText.format(**{n:vals[n] for n in self.paramNames})
         
 class LinearModel(Model):
     """Basic linear mode"""
@@ -389,7 +430,7 @@ class CubicModel(Model):
         
     def InitialGuess(self,data):
         """Use evenly spaced points to solve linear system"""
-        return LinSolve(data.X,data.Y,3)
+        return LinSolve(data.X,data.Y,2)
         
 class GaussianModel(Model):
     """Basic Gaussian Fit Model"""
@@ -520,7 +561,7 @@ class Fit(object):
         if (method == 'trf' or method == 'dogbox') and not bounds:
             raise CurveFitException('Bounds are reuqired for trf and dogbox algorithms')
         
-        # Check if initial params are given, otherwise use Model.InitialGuess()
+        # Check if initial params are given, otherwise run without x errors
         # to obtain initial guesses
         if not initialParams:
             initialParams = model.InitialGuess(self.data)

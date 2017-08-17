@@ -2,17 +2,9 @@
 """
 Spinlab Curve Fitting Template
 
-File:          template_test.py
+File:          SpinlabCF_template.py
 Author:        Steve Fromm
 Last Modified: 2017-08-04
-
-****************************************
-This file shows a configured template to plot data taken durin the PHY 451 Lectures during Summer 2017 @ NSCL.
-This file uses the data file:
-            Current_vs_Voltage.txt
-
-The script will generate all three plots and save them to .png files
-****************************************
 
 This template demonstrates usage of the SpinlabCF curve fitting library.  This
 library makes use of the packages scipy.optimize, numpy and matplotlib.  It
@@ -101,8 +93,14 @@ residualPlotOptions = cf.PlotOptions(title = "Ohm's Law Test - Residuals",
                                  ylabel = 'Residuals (A)')
 
 """Model Options
-Choose an existing SpinlabCF model or write your own based on the following
-template:"""
+    -Choose an existing SpinlabCF model
+        Fit.Linear    <-- y(x) = m*x + b
+        Fit.Quadratic <-- y(x) = a*x^2 + b*x + c
+        Fit.Cubic     <-- y(x) = a*x^3 + b*x^2 + c*x + d
+        Fit.Gaussian  <-- y = a*exp(-((x-b)/c)^2)
+        Fit.OhmIV     <-- I(V) = V/R + b
+        Fit.OhmIR     <-- I(R) = V/R + b
+    -Write your own based on the following template:"""
 #class CustomModel(cf.Model): # Needs to be derived from the cf.Model class
 #    """This class will implement your custom model, associate parameters with
 #    text names, and generate text for your plots"""
@@ -145,15 +143,24 @@ template:"""
 #        param2 = """Initiall guess for param2"""   # e.g. b = y-intercept of line between two points of slope m
 #        return param1,param2 # return all your parameters in the same order as listed in Function
 
+"""Third option for a model is using cf.UserModel() as follows (sample linear implementation):"""
+#def linearFunc(x,m,b):  # Function to fit to
+#    return m*x+b
+#
+#params = ['m','b'] # Must be in same order as function to fit argument list
+#
+#def initGuess(data): # Provide an initial guess based on the data set
+#    m = (data.Y[-1]-data.Y[0])/(data.X[-1]-data.X[0])
+#    b = data.Y[0]-m*data.X[0]
+#    return m,b
+#
+#text = 'y=m*x+b' # Plain text version of model
+#formatText = 'y={m:1.2e}x+{b:1.2e}' # Format string of text version of model
+#
+## Create a new model
+#model = cf.UserModel('linear',linearFunc, params, text, initGuess, formatText)
+
 model = cf.Fit.OhmIV # or for a custom model like above: model = CustomModel()
-"""Currently available models are:
-        Fit.Linear    <-- y(x) = m*x + b
-        Fit.Quadratic <-- y(x) = a*x^2 + b*x + c
-        Fit.Cubic     <-- y(x) = a*x^3 + b*x^2 + c*x + d
-        Fit.Gaussian  <-- y = a*exp(-((x-b)/c)^2)
-        Fit.OhmIV     <-- I(V) = V/R + b
-        Fit.OhmIR     <-- I(R) = V/R + b
-"""
 
 # Fit Options
 initialParams = None   # Initial guess of parameters (number of values needs to match number of parameters)
