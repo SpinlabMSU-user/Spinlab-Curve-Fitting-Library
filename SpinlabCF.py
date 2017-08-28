@@ -261,7 +261,7 @@ class Model(object):
     
 class UserModel(Model):
     """Custom model based on a user provided function"""
-    def __init__(self,name,func,params,text,initGuess=None,formatText=None):
+    def __init__(self,name,func,params,text,initGuess,formatText=None):
         """Generate a custom model based on a provided funtion
         Parameters:
             name - string, name of the model
@@ -269,7 +269,7 @@ class UserModel(Model):
             params - string list, name of the parameters in same order as the
                      provided function, e.g. ['m','b'] for f(x,m,b)
             text - string, text form of the equation, e.g. 'y=m*x+b'
-            initGuess - (optional) function to provide initial guess for fitting
+            initGuess - function to provide initial guess for fitting
                         algorithm, of form guess(data) where data is a DataSet
             formatText - (optional) string, format string with identifiers as
                          param names, e.g. 'y={m:1.2f}x+{b:1.2f}"""
@@ -287,11 +287,7 @@ class UserModel(Model):
         return self.func(x,*args)
     
     def InitialGuess(self,data):
-        """Generates an initial guess to use in the fitting algorithm (if provided)"""
-        if not self.initGuess:
-            # Return 1's if not provided
-            return (1 for i in range(self.numParams))
-        
+        """Generates an initial guess to use in the fitting algorithm"""
         return self.initGuess(data)
     
     def Text(self,vals=None):
