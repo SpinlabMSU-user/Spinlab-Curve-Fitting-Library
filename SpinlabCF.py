@@ -784,3 +784,60 @@ class Fit(object):
         out += 'Chi2: {:1.6e}\n'.format(self.chi2)
             
         return out
+
+    def SetPlotProps(po):
+    """Configure plot properties"""
+    rcParams.update({'figure.autolayout':True})
+    rcParams.update({'font.sans-serif':po.fontfamily})
+    rcParams.update({'font.family':'sans-serif'})
+    rcParams.update({'figure.figsize':(8,6)})
+    rcParams.update({'figure.dpi':po.dpi})
+    rcParams.update({'font.size':po.fontsize})
+    plt.gca().tick_params(direction='out')
+    
+def ForceSciNotation(po):
+    plt.gca().yaxis.get_major_formatter().set_powerlimits(po.powerlimits)
+    plt.gca().xaxis.get_major_formatter().set_powerlimits(po.powerlimits)
+    
+def DisplayData(data,po=PlotOptions(),saveFile=None):
+    """Displays the plot of the data points
+    Parameters:
+        po - (optional) PlotOptions, configure how the plot is displayed
+        saveFile - (optional) string, name of the image file to save the plot as"""
+    # Make plots look nice
+    SetPlotProps(po)
+    
+    # Create a new unique figure for this plot
+    plt.figure()
+    
+    # Plot the points with errorbars; returns 3 lines: the points, y-error
+    # bars and x-error bars; we only need the points line, a and b are dummy
+    # variables so the interpreter doesn't squawk at us
+    line1,a,b = plt.errorbar(data.X,data.Y,xerr=data.dX,yerr=data.dY,
+                             fmt=po.pt_fmt,fillstyle='none',capsize=po.capsize,)
+    line1.set_label('Data')
+    
+    # Set the plot bounds if provided
+    if po.xmin:
+        plt.xlim(xmin=po.xmin)
+    if po.xmax:
+        plt.xlim(xmax=po.xmax)
+    if po.ymin:
+        plt.ylim(ymin=po.ymin)
+    if po.ymin:
+        plt.ylim(ymax=po.ymax)
+        
+    # Insert the text labels on the plot
+    plt.title(po.title)
+    plt.xlabel(po.xlabel)
+    plt.ylabel(po.ylabel)
+    plt.legend()
+    
+    ForceSciNotation(po)
+    
+    # Save the figure to a file if requested
+    if saveFile:
+        plt.savefig(saveFile)
+    
+    # Flush the image buffer to the screen
+    plt.show()
