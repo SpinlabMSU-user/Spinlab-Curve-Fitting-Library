@@ -785,7 +785,7 @@ class Fit(object):
             
         return out
 
-    def SetPlotProps(po):
+def SetPlotProps(po):
     """Configure plot properties"""
     rcParams.update({'figure.autolayout':True})
     rcParams.update({'font.sans-serif':po.fontfamily})
