@@ -261,7 +261,7 @@ class Model(object):
     
 class UserModel(Model):
     """Custom model based on a user provided function"""
-    def __init__(self,name,func,params,text,initGuess,formatText=None):
+    def __init__(self,name,func,params,text,initGuess=None,formatText=None):
         """Generate a custom model based on a provided funtion
         Parameters:
             name - string, name of the model
@@ -269,7 +269,7 @@ class UserModel(Model):
             params - string list, name of the parameters in same order as the
                      provided function, e.g. ['m','b'] for f(x,m,b)
             text - string, text form of the equation, e.g. 'y=m*x+b'
-            initGuess - function to provide initial guess for fitting
+            initGuess - (optional) function to provide initial guess for fitting
                         algorithm, of form guess(data) where data is a DataSet
             formatText - (optional) string, format string with identifiers as
                          param names, e.g. 'y={m:1.2f}x+{b:1.2f}"""
@@ -286,8 +286,16 @@ class UserModel(Model):
         """Returns user provided function evaluated at a given x"""
         return self.func(x,*args)
     
+    def __call__(self,x,*args):
+        """Allows object to be called as function"""
+        return self.func(x,*args)
+    
     def InitialGuess(self,data):
-        """Generates an initial guess to use in the fitting algorithm"""
+        """Generates an initial guess to use in the fitting algorithm (if provided)"""
+        if not self.initGuess:
+            # Return 1's if not provided
+            return (1 for i in range(self.numParams))
+        
         return self.initGuess(data)
     
     def Text(self,vals=None):
@@ -320,7 +328,7 @@ class LinearModel(Model):
         
     def InitialGuess(self,data):
         """Use evenly spaced points to solve linear system"""
-        return LinSolve(data.X,data.Y,1)
+        return LinSolve(data.X,data.Y,1).tolist()
     
 class OhmIVModel(Model):
     """Ohm's Law as I(V) = V/R + b"""
@@ -401,7 +409,7 @@ class QuadraticModel(Model):
         
     def InitialGuess(self,data):
         """Use evenly spaced points to solve linear system"""
-        return LinSolve(data.X,data.Y,2)
+        return LinSolve(data.X,data.Y,2).tolist()
         
 class CubicModel(Model):
     """Basic Cubic Fit Model"""
@@ -426,7 +434,7 @@ class CubicModel(Model):
         
     def InitialGuess(self,data):
         """Use evenly spaced points to solve linear system"""
-        return LinSolve(data.X,data.Y,2)
+        return LinSolve(data.X,data.Y,3).tolist()
         
 class GaussianModel(Model):
     """Basic Gaussian Fit Model"""
@@ -462,6 +470,24 @@ class GaussianModel(Model):
             c *= -1
         
         return a,b,c
+    
+class ExpDecayModel(Model):
+    """Basic Exponential Decay Fit Model"""
+    def __init__(self):
+        """Create the model"""
+        super().__init__()
+        self.name = 'exp decay'
+        self.numParams = 2
+        self.paramNames = ['a','b']
+        
+    def Function(self,x,a,b):
+        return a*np.exp(-b*x)
+    
+    def Text(self,vals=None):
+        return 'a*exp(-b*x)'
+    
+    def InitialGuess(self,data):
+        return (1,1)
     
 class PlotOptions(object):
     """Holds information on how to display plots"""
@@ -501,7 +527,7 @@ class PlotOptions(object):
         self.xlabel = 'X' if 'xlabel' not in keys else kwargs['xlabel']
         self.ylabel = 'Y' if 'ylabel' not in keys else kwargs['ylabel']
         self.capsize = 5 if 'capsize' not in keys else kwargs['capsize']
-        self.fontfamily = 'Palatino Linotype' if 'fontfamily' not in keys else kwargs['fontfamily']
+        self.fontfamily = 'Palatino' if 'fontfamily' not in keys else kwargs['fontfamily']
         self.figsize = (8,6) if 'figsize' not in keys else kwargs['figsize']
         self.dpi = 80 if 'dpi' not in keys else kwargs['dpi']
         self.fontsize = 12 if 'fontsize' not in keys else kwargs['fontsize']
@@ -517,8 +543,9 @@ class Fit(object):
     OhmIV = OhmIVModel()
     OhmIR = OhmIRModel()
     Gaussian = GaussianModel()
+    ExpDecay = ExpDecayModel()
     
-    def __init__(self,data:DataSet,model:Model,initialParams=[],bounds=[],method='lm',eps=1e-6):
+    def __init__(self,data:DataSet,model:Model,initialParams=[],bounds=[],method='lm',weighted=True,eps=1e-6):
         """Create the fit for this data set
         Parameters:
             data - DataSet, previously loaded data set
@@ -560,13 +587,16 @@ class Fit(object):
         # Check if initial params are given, otherwise run without x errors
         # to obtain initial guesses
         if not initialParams:
+            #initialParams,a = sopt.curve_fit(self.model.Function,self.data.X,self.data.Y)
             initialParams = model.InitialGuess(self.data)
             if not initialParams:
                 raise ModelException('You must implement the InitialGuess method of your model')
             
         # Calculate intiial sigma total and weights
         dXprop = self.PropDX(initialParams)
-    
+        #dXprop = np.array([(self.model.Function(x+(self.eps*x),*initialParams)-self.model.Function(x-(self.eps*x),*initialParams))/(2*(self.eps*x))*dx \
+        #                 for x,dx in zip(self.data.X,self.data.dX)])
+        
         # Calculate and store total uncertainty/weights
         sigma2 = dXprop**2+data.dY**2
         self.sigma = np.sqrt(sigma2)
@@ -578,9 +608,11 @@ class Fit(object):
         # pcov is the covariance matrix of the fit
         # We converted our uncertainties to absolute values so absolute_sigma
         # is set to True
-        args['p0'] = initialParams
-        args['sigma'] = self.sigma
-        popt,pcov = sopt.curve_fit(self.model,self.data.X,self.data.Y,**args)
+        if weighted:
+            args['p0'] = initialParams
+            args['sigma'] = self.sigma
+
+        popt,pcov = sopt.curve_fit(self.model.Function,self.data.X,self.data.Y,maxfev=20000,**args)
         
         # Calculate and store the uncertainties in the parameters
         self.errors = np.sqrt(np.diag(pcov))
@@ -609,7 +641,7 @@ class Fit(object):
         Takes numerical derivative at each point and calculates the x uncertainty
         contribution to the total uncertainty as:
             sigma_y(x,sigma_x) = abs(dy/dx)*sigma_x"""
-        return np.array([(self.model(x+(self.eps*x),*params)-self.model(x-(self.eps*x),*params))/(2*(self.eps*x))*dx \
+        return np.array([(self.model.Function(x+(self.eps*x),*params)-self.model.Function(x-(self.eps*x),*params))/(2*(self.eps*x))*dx \
                          for x,dx in zip(self.data.X,self.data.dX)])
     
     def SetPlotProps(self,po):
@@ -784,7 +816,7 @@ class Fit(object):
         out += 'Chi2: {:1.6e}\n'.format(self.chi2)
             
         return out
-
+    
 def SetPlotProps(po):
     """Configure plot properties"""
     rcParams.update({'figure.autolayout':True})
