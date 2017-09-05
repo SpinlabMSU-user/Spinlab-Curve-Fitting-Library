@@ -4,7 +4,7 @@ Spinlab Curve Fitting Library
 
 File: SpinlabCF.py
 Author: Steve Fromm
-Last Modified: 2017-08-04
+Last Modified: 2017-09-05
 
 This library provides an easy to use interface to perform non-linear function
 fitting to a provided data set.  The underlying curve-fitting algorithm is
@@ -527,7 +527,7 @@ class PlotOptions(object):
         self.xlabel = 'X' if 'xlabel' not in keys else kwargs['xlabel']
         self.ylabel = 'Y' if 'ylabel' not in keys else kwargs['ylabel']
         self.capsize = 5 if 'capsize' not in keys else kwargs['capsize']
-        self.fontfamily = 'Palatino' if 'fontfamily' not in keys else kwargs['fontfamily']
+        self.fontfamily = 'Palatino Linotype' if 'fontfamily' not in keys else kwargs['fontfamily']
         self.figsize = (8,6) if 'figsize' not in keys else kwargs['figsize']
         self.dpi = 80 if 'dpi' not in keys else kwargs['dpi']
         self.fontsize = 12 if 'fontsize' not in keys else kwargs['fontsize']
